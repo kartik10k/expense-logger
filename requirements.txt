@@ -1,0 +1,5 @@
+SpeechRecognition==3.10.0
+pandas==2.2.0
+pyaudio==0.2.14
+RPi.GPIO==0.7.1
+gpiozero==2.0 
