@@ -12,7 +12,7 @@ const ASSETS_TO_CACHE = [
 // Function to check for updates
 async function checkForUpdates() {
     try {
-        const response = await fetch('index.html', { cache: 'no-store' });
+        const response = await fetch('index.html');
         const newCache = await caches.open(CACHE_NAME);
         await newCache.addAll(ASSETS_TO_CACHE);
         return true;
@@ -44,33 +44,29 @@ self.addEventListener('activate', (event) => {
 });
 
 self.addEventListener('fetch', (event) => {
-    // Check for updates when the app is opened
-    if (event.request.url.endsWith('index.html')) {
-        event.respondWith(
-            (async () => {
-                const cachedResponse = await caches.match(event.request);
-                const networkResponse = await fetch(event.request);
-                
-                // If the network response is different from cache, update the cache
-                if (cachedResponse && networkResponse) {
-                    const cachedText = await cachedResponse.text();
-                    const networkText = await networkResponse.text();
-                    
-                    if (cachedText !== networkText) {
-                        const newCache = await caches.open(CACHE_NAME);
-                        await newCache.addAll(ASSETS_TO_CACHE);
-                    }
+    event.respondWith(
+        caches.match(event.request)
+            .then((response) => {
+                // Return cached response if found
+                if (response) {
+                    return response;
                 }
                 
-                return networkResponse;
-            })()
-        );
-    } else {
-        event.respondWith(
-            caches.match(event.request)
-                .then((response) => response || fetch(event.request))
-        );
-    }
+                // Otherwise fetch from network
+                return fetch(event.request)
+                    .then(networkResponse => {
+                        // Cache the response for future use
+                        if (networkResponse.ok) {
+                            const responseToCache = networkResponse.clone();
+                            caches.open(CACHE_NAME)
+                                .then(cache => {
+                                    cache.put(event.request, responseToCache);
+                                });
+                        }
+                        return networkResponse;
+                    });
+            })
+    );
 });
 
 // Listen for messages from the client
