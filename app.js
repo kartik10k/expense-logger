@@ -226,4 +226,28 @@ document.addEventListener('DOMContentLoaded', () => {
 // Make closeEditModal available globally
 function closeEditModal() {
     expenseLogger.closeEditModal();
-} 
+}
+
+// Register service worker
+if ('serviceWorker' in navigator) {
+    window.addEventListener('load', () => {
+        navigator.serviceWorker.register('sw.js')
+            .then(registration => {
+                console.log('ServiceWorker registration successful');
+                
+                // Check for updates when the app starts
+                registration.active.postMessage('CHECK_UPDATE');
+            })
+            .catch(err => {
+                console.log('ServiceWorker registration failed: ', err);
+            });
+    });
+}
+
+// Listen for update notifications
+navigator.serviceWorker.addEventListener('message', (event) => {
+    if (event.data === 'UPDATE_AVAILABLE') {
+        // Reload the page to get the new version
+        window.location.reload();
+    }
+}); 
