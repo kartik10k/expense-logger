@@ -235,7 +235,7 @@ if ('serviceWorker' in navigator) {
             .then(registration => {
                 console.log('ServiceWorker registration successful');
                 
-                // Check for updates when the app starts
+                // Check for updates when app starts (both browser and home screen)
                 registration.active.postMessage('CHECK_UPDATE');
             })
             .catch(err => {

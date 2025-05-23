@@ -12,8 +12,21 @@ const ASSETS_TO_CACHE = [
 // Function to check for updates
 async function checkForUpdates() {
     try {
-        const response = await fetch('index.html');
+        const response = await fetch('index.html', { cache: 'no-store' });
         const newCache = await caches.open(CACHE_NAME);
+        
+        // Check if the content has actually changed
+        const cachedResponse = await caches.match('index.html');
+        if (cachedResponse) {
+            const cachedText = await cachedResponse.text();
+            const newText = await response.text();
+            
+            if (cachedText === newText) {
+                return false; // No changes
+            }
+        }
+        
+        // Update cache only if content has changed
         await newCache.addAll(ASSETS_TO_CACHE);
         return true;
     } catch (error) {
@@ -52,10 +65,9 @@ self.addEventListener('fetch', (event) => {
                     return response;
                 }
                 
-                // Otherwise fetch from network
+                // If not in cache, fetch from network
                 return fetch(event.request)
                     .then(networkResponse => {
-                        // Cache the response for future use
                         if (networkResponse.ok) {
                             const responseToCache = networkResponse.clone();
                             caches.open(CACHE_NAME)
