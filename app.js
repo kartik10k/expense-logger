@@ -78,13 +78,11 @@ class ExpenseLogger {
         if (amountMatch) {
             const amount = parseFloat(amountMatch[1]);
             
-            // Determine category
-            let category = 'Other';
-            if (text.includes('sabzi') || text.includes('vegetable')) {
-                category = 'Vegetables';
-            } else if (text.includes('groceries') || text.includes('store')) {
-                category = 'Groceries';
-            }
+            // Category classification using semantic similarity
+            const category = this.classifyCategory(text);
+            
+            // Remove amount from description
+            const description = text.replace(amountPattern, '').trim();
             
             // Create expense
             const expense = {
@@ -92,13 +90,76 @@ class ExpenseLogger {
                 date: new Date(),
                 category,
                 amount,
-                description: text
+                description
             };
             
             this.addExpense(expense);
         }
         
         document.getElementById('transcription').textContent = '';
+    }
+
+    classifyCategory(text) {
+        // Define category embeddings (representative words for each category)
+        const categoryEmbeddings = {
+            'Housing': [
+                'rent', 'house', 'apartment', 'home', 'mortgage', 'property', 'room',
+                'accommodation', 'lease', 'flat', 'residence', 'dwelling', 'housing'
+            ],
+            'Utilities': [
+                'electricity', 'water', 'gas', 'internet', 'phone', 'bill', 'utility',
+                'wifi', 'broadband', 'power', 'connection', 'service', 'utilities'
+            ],
+            'Transport': [
+                'bus', 'train', 'taxi', 'uber', 'fuel', 'petrol', 'diesel', 'transport',
+                'travel', 'metro', 'auto', 'commute', 'journey', 'fare', 'ticket'
+            ],
+            'Food': [
+                'food', 'restaurant', 'cafe', 'meal', 'grocery', 'vegetable', 'fruit',
+                'sabzi', 'store', 'market', 'dining', 'lunch', 'dinner', 'breakfast',
+                'snack', 'drink', 'beverage', 'cooking', 'ingredients'
+            ]
+        };
+
+        // Calculate similarity scores for each category
+        const scores = {};
+        const words = text.split(/\s+/);
+
+        for (const [category, embeddings] of Object.entries(categoryEmbeddings)) {
+            let score = 0;
+            
+            // Calculate word overlap and semantic similarity
+            for (const word of words) {
+                // Direct word match
+                if (embeddings.includes(word)) {
+                    score += 2;
+                }
+                
+                // Check for word similarity (e.g., 'hous' matches 'house')
+                for (const embedding of embeddings) {
+                    if (word.includes(embedding) || embedding.includes(word)) {
+                        score += 1;
+                    }
+                }
+            }
+            
+            // Normalize score by text length
+            scores[category] = score / words.length;
+        }
+
+        // Find category with highest score
+        let maxScore = 0;
+        let bestCategory = 'Other';
+
+        for (const [category, score] of Object.entries(scores)) {
+            if (score > maxScore) {
+                maxScore = score;
+                bestCategory = category;
+            }
+        }
+
+        // Only return a category if the confidence is high enough
+        return maxScore > 0.3 ? bestCategory : 'Other';
     }
 
     addExpense(expense) {

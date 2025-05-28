@@ -109,21 +109,26 @@ h2 {
 }
 
 .expense-category {
-    font-size: 14px;
-    color: #666;
+    display: inline-block;
+    font-size: 12px;
+    font-weight: 500;
+    color: white;
+    background-color: var(--primary-color);
+    padding: 4px 8px;
+    border-radius: 12px;
     margin-top: 5px;
 }
 
 .expense-description {
     font-size: 14px;
     color: #666;
-    margin-top: 5px;
+    margin-top: 8px;
 }
 
 .expense-date {
     font-size: 12px;
     color: #999;
-    margin-top: 5px;
+    margin-top: 8px;
 }
 
 .expense-actions {
