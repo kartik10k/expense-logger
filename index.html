@@ -27,7 +27,19 @@
             </div>
 
             <div class="expenses-section">
-                <h2>Recent Expenses</h2>
+                <div class="expenses-header">
+                    <h2>Recent Expenses</h2>
+                    <div class="expenses-actions">
+                        <label class="select-all">
+                            <input type="checkbox" id="selectAll">
+                            Select All
+                        </label>
+                        <button id="deleteSelected" class="delete-selected-button" disabled>
+                            <span>🗑️</span>
+                            Delete Selected
+                        </button>
+                    </div>
+                </div>
                 <div id="expensesList" class="expenses-list"></div>
             </div>
         </main>

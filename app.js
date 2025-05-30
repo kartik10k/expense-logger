@@ -4,6 +4,7 @@ class ExpenseLogger {
         this.recognition = null;
         this.isRecording = false;
         this.currentEditId = null;
+        this.selectedExpenses = new Set();
         
         this.initializeSpeechRecognition();
         this.setupEventListeners();
@@ -39,10 +40,14 @@ class ExpenseLogger {
         const recordButton = document.getElementById('recordButton');
         const exportButton = document.getElementById('exportButton');
         const editForm = document.getElementById('editForm');
+        const selectAllCheckbox = document.getElementById('selectAll');
+        const deleteSelectedButton = document.getElementById('deleteSelected');
 
         recordButton.addEventListener('click', () => this.toggleRecording());
         exportButton.addEventListener('click', () => this.exportToCSV());
         editForm.addEventListener('submit', (e) => this.handleEditSubmit(e));
+        selectAllCheckbox.addEventListener('change', () => this.toggleSelectAll());
+        deleteSelectedButton.addEventListener('click', () => this.deleteSelected());
     }
 
     toggleRecording() {
@@ -81,8 +86,8 @@ class ExpenseLogger {
             // Category classification using semantic similarity
             const category = this.classifyCategory(text);
             
-            // Remove amount from description
-            const description = text.replace(amountPattern, '').trim();
+            // Keep the full transcription as description
+            const description = text;
             
             // Create expense
             const expense = {
@@ -183,10 +188,18 @@ class ExpenseLogger {
             const date = new Date(expense.date).toLocaleDateString();
             
             expenseElement.innerHTML = `
-                <div class="expense-amount">${expense.amount} Rs</div>
-                <div class="expense-category">${expense.category}</div>
-                <div class="expense-description">${expense.description}</div>
-                <div class="expense-date">${date}</div>
+                <div class="expense-checkbox">
+                    <input type="checkbox" 
+                           data-expense-id="${expense.id}"
+                           ${this.selectedExpenses.has(expense.id) ? 'checked' : ''}
+                           onchange="expenseLogger.toggleExpenseSelection(${expense.id})">
+                </div>
+                <div class="expense-content">
+                    <div class="expense-amount">${expense.amount} Rs</div>
+                    <div class="expense-category">${expense.category}</div>
+                    <div class="expense-description">${expense.description}</div>
+                    <div class="expense-date">${date}</div>
+                </div>
                 <div class="expense-actions">
                     <button class="action-button edit-button" onclick="expenseLogger.editExpense(${expense.id})">✏️</button>
                     <button class="action-button delete-button" onclick="expenseLogger.deleteExpense(${expense.id})">🗑️</button>
@@ -238,10 +251,18 @@ class ExpenseLogger {
     }
 
     deleteExpense(id) {
-        if (confirm('Are you sure you want to delete this expense?')) {
+        const expense = this.expenses.find(e => e.id === id);
+        if (!expense) return;
+
+        const message = `Are you sure you want to delete this expense?\nAmount: ${expense.amount} Rs\nCategory: ${expense.category}\nDescription: ${expense.description}`;
+        
+        if (confirm(message)) {
             this.expenses = this.expenses.filter(e => e.id !== id);
+            this.selectedExpenses.delete(id);
             this.saveExpenses();
             this.renderExpenses();
+            this.updateDeleteButton();
+            this.updateSelectAllCheckbox();
         }
     }
 
@@ -276,6 +297,69 @@ class ExpenseLogger {
         link.click();
         document.body.removeChild(link);
     }
+
+    toggleSelectAll() {
+        const selectAllCheckbox = document.getElementById('selectAll');
+        const checkboxes = document.querySelectorAll('.expense-checkbox input');
+        
+        checkboxes.forEach(checkbox => {
+            checkbox.checked = selectAllCheckbox.checked;
+            const expenseId = parseInt(checkbox.dataset.expenseId);
+            if (selectAllCheckbox.checked) {
+                this.selectedExpenses.add(expenseId);
+            } else {
+                this.selectedExpenses.delete(expenseId);
+            }
+        });
+        
+        this.updateDeleteButton();
+    }
+
+    toggleExpenseSelection(expenseId) {
+        if (this.selectedExpenses.has(expenseId)) {
+            this.selectedExpenses.delete(expenseId);
+        } else {
+            this.selectedExpenses.add(expenseId);
+        }
+        
+        this.updateDeleteButton();
+        this.updateSelectAllCheckbox();
+    }
+
+    updateDeleteButton() {
+        const deleteSelectedButton = document.getElementById('deleteSelected');
+        deleteSelectedButton.disabled = this.selectedExpenses.size === 0;
+    }
+
+    updateSelectAllCheckbox() {
+        const selectAllCheckbox = document.getElementById('selectAll');
+        const checkboxes = document.querySelectorAll('.expense-checkbox input');
+        selectAllCheckbox.checked = checkboxes.length > 0 && 
+            Array.from(checkboxes).every(checkbox => checkbox.checked);
+    }
+
+    deleteSelected() {
+        const count = this.selectedExpenses.size;
+        if (count === 0) return;
+
+        // Get details of selected expenses
+        const selectedExpenses = this.expenses.filter(expense => this.selectedExpenses.has(expense.id));
+        const totalAmount = selectedExpenses.reduce((sum, exp) => sum + exp.amount, 0);
+        
+        let message = `Are you sure you want to delete ${count} expense${count > 1 ? 's' : ''}?\n\n`;
+        message += `Total Amount: ${totalAmount} Rs\n`;
+        message += `Categories: ${[...new Set(selectedExpenses.map(exp => exp.category))].join(', ')}\n\n`;
+        message += 'This action cannot be undone.';
+
+        if (confirm(message)) {
+            this.expenses = this.expenses.filter(expense => !this.selectedExpenses.has(expense.id));
+            this.selectedExpenses.clear();
+            this.saveExpenses();
+            this.renderExpenses();
+            this.updateDeleteButton();
+            this.updateSelectAllCheckbox();
+        }
+    }
 }
 
 // Initialize the app
@@ -296,7 +380,7 @@ if ('serviceWorker' in navigator) {
             .then(registration => {
                 console.log('ServiceWorker registration successful');
                 
-                // Check for updates when app starts (both browser and home screen)
+                // Check for updates when app starts
                 registration.active.postMessage('CHECK_UPDATE');
             })
             .catch(err => {
