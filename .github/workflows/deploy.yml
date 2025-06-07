@@ -1,0 +1,39 @@
+name: Deploy to GitHub Pages
+
+on:
+  push:
+    branches: [ main ]
+  workflow_dispatch:
+
+jobs:
+  build-and-deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v3
+
+      - name: Build
+        env:
+          HUGGINGFACE_API_KEY: ${{ secrets.HUGGINGFACE_API_KEY }}
+        run: |
+          # Create config.js with the secret
+          echo "// Configuration for the Expense Logger app
+          const config = {
+              HUGGINGFACE: {
+                  API_KEY: '${{ secrets.HUGGINGFACE_API_KEY }}',
+                  MODEL: 'mistralai/Mistral-7B-Instruct-v0.2',
+                  MAX_RETRIES: 3,
+                  RATE_LIMIT_COOLDOWN: 60000,
+              },
+              APP: {
+                  VERSION: '1.0.0',
+                  CACHE_KEY: 'classificationCache',
+              }
+          };
+          window.appConfig = config;" > config.js
+
+      - name: Deploy
+        uses: JamesIves/github-pages-deploy-action@v4
+        with:
+          folder: .
+          branch: gh-pages 
