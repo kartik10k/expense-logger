@@ -27,15 +27,31 @@ body {
 }
 
 header {
-    text-align: center;
+    background-color: var(--primary-color);
+    color: white;
+    padding: 15px 20px;
+    border-radius: var(--border-radius);
     margin-bottom: 20px;
+    display: flex;
+    align-items: center;
+}
+
+.header-title-container {
+    flex: 1;
+    text-align: center;
+    padding-left: 20px;
 }
 
 h1 {
-    color: var(--primary-color);
+    color: white;
     font-size: 24px;
-    text-align: center;
-    margin-bottom: 20px;
+    margin: 0;
+}
+
+.header-actions {
+    display: flex;
+    align-items: center;
+    margin-left: auto;
 }
 
 .recording-section {
