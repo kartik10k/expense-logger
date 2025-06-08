@@ -12,6 +12,7 @@ self.addEventListener('install', event => {
     event.waitUntil(
         caches.open(CACHE_NAME)
             .then(cache => cache.addAll(ASSETS_TO_CACHE))
+            .then(() => self.skipWaiting()) // Activate new service worker immediately
     );
 });
 
@@ -26,15 +27,25 @@ self.addEventListener('activate', event => {
                     }
                 })
             );
-        })
+        }).then(() => self.clients.claim()) // Take control of all clients
     );
 });
 
 // Fetch event - serve from cache, fall back to network
 self.addEventListener('fetch', event => {
     event.respondWith(
-        caches.match(event.request)
-            .then(response => response || fetch(event.request))
+        fetch(event.request)
+            .then(response => {
+                // Cache the new response
+                caches.open(CACHE_NAME).then(cache => {
+                    cache.put(event.request, response.clone());
+                });
+                return response;
+            })
+            .catch(() => {
+                // If network fails, try to serve from cache
+                return caches.match(event.request);
+            })
     );
 });
 
