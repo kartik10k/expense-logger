@@ -1,0 +1,137 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Expense Logger</title>
+    <link rel="manifest" href="manifest.json">
+    <link rel="stylesheet" href="styles.css">
+    <meta name="theme-color" content="#2196F3">
+    <link rel="apple-touch-icon" href="icons/icon-192x192.png">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black">
+    <meta name="apple-mobile-web-app-title" content="Expense Logger">
+    <!-- Add TensorFlow.js and Universal Sentence Encoder -->
+    <script src="https://cdn.jsdelivr.net/npm/@tensorflow/tfjs"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@tensorflow-models/universal-sentence-encoder"></script>
+    <!-- Add Hugging Face API client -->
+    <script src="https://cdn.jsdelivr.net/npm/@huggingface/inference"></script>
+    <!-- Add configuration -->
+    <script src="config.js"></script>
+</head>
+<body>
+    <div class="app-container">
+        <header>
+            <h1>Expense Logger</h1>
+        </header>
+        
+        <main>
+            <div class="recording-section">
+                <button id="recordButton" class="record-button">
+                    <span class="mic-icon">🎤</span>
+                </button>
+                <div id="transcription" class="transcription"></div>
+                <button id="addManualButton" class="add-manual-button" onclick="expenseLogger.showAddManualForm()">
+                    <span>➕</span> Add Manually
+                </button>
+            </div>
+
+            <div class="expenses-section">
+                <div class="expenses-header">
+                    <h2>Expenses</h2>
+                    <div class="month-selector">
+                        <button id="prevMonth" class="month-nav-button">◀</button>
+                        <span id="currentMonth"></span>
+                        <button id="nextMonth" class="month-nav-button">▶</button>
+                    </div>
+                    <div class="month-total">
+                        Total: <span id="monthTotal">0</span> Rs
+                    </div>
+                    <div class="expenses-actions">
+                        <label class="select-all">
+                            <input type="checkbox" id="selectAll">
+                            Select All
+                        </label>
+                        <button id="exportSelected" class="export-button" disabled>📥 Export Selected</button>
+                        <button id="deleteSelected" class="delete-selected-button" disabled>🗑️ Delete Selected</button>
+                    </div>
+                </div>
+                <div id="expensesList" class="expenses-list"></div>
+            </div>
+        </main>
+    </div>
+
+    <!-- Edit Modal -->
+    <div id="editModal" class="modal">
+        <div class="modal-content">
+            <h2>Edit Expense</h2>
+            <form id="editForm">
+                <div class="form-group">
+                    <label for="editDate">Date</label>
+                    <input type="date" id="editDate" required>
+                </div>
+                <div class="form-group">
+                    <label for="editAmount">Amount (Rs)</label>
+                    <input type="number" id="editAmount" step="0.01" required>
+                </div>
+                <div class="form-group">
+                    <label for="editCategory">Category</label>
+                    <select id="editCategory" required>
+                        <option value="Housing">Housing</option>
+                        <option value="Utilities">Utilities</option>
+                        <option value="Transport">Transport</option>
+                        <option value="Food">Food</option>
+                        <option value="Other">Other</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label for="editDescription">Description</label>
+                    <textarea id="editDescription" required></textarea>
+                </div>
+                <div class="modal-actions">
+                    <button type="button" class="cancel-button" onclick="closeEditModal()">Cancel</button>
+                    <button type="submit" class="save-button">Save Changes</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Add Manual Expense Modal -->
+    <div id="addManualModal" class="modal">
+        <div class="modal-content">
+            <h2>Add Expense</h2>
+            <form id="addManualForm">
+                <div class="form-group">
+                    <label for="manualDate">Date</label>
+                    <input type="date" id="manualDate" required>
+                </div>
+                <div class="form-group">
+                    <label for="manualAmount">Amount (Rs)</label>
+                    <input type="number" id="manualAmount" step="0.01" required>
+                </div>
+                <div class="form-group">
+                    <label for="manualCategory">Category</label>
+                    <select id="manualCategory" required>
+                        <option value="Housing">Housing</option>
+                        <option value="Utilities">Utilities</option>
+                        <option value="Transport">Transport</option>
+                        <option value="Food">Food</option>
+                        <option value="Other">Other</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label for="manualDescription">Description</label>
+                    <textarea id="manualDescription" required></textarea>
+                </div>
+                <div class="modal-actions">
+                    <button type="button" class="cancel-button" onclick="expenseLogger.closeAddManualModal()">Cancel</button>
+                    <button type="submit" class="save-button">Add Expense</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <script src="app.js"></script>
+    <script src="sw.js"></script>
+</body>
+</html> 
