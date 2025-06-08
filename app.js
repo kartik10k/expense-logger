@@ -10,7 +10,7 @@ class ExpenseLogger {
         this.classificationCache = new Map();
         this.rateLimitReset = 0;
         this.retryCount = 0;
-        this.maxRetries = window.appConfig.HUGGINGFACE.MAX_RETRIES;
+        this.maxRetries = window.appConfig.HUGGINGFACE.MAX_RETRIES + 1;
         
         this.initializeSpeechRecognition();
         this.setupEventListeners();
