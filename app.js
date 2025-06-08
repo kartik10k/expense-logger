@@ -1,3 +1,19 @@
+if (typeof window.appConfig === 'undefined') {
+    console.warn('window.appConfig is undefined. Providing a default configuration.');
+    window.appConfig = {
+        HUGGINGFACE: {
+            API_KEY: '', // Empty key, so LLM won't work, but app won't crash
+            MODEL: 'mistralai/Mistral-7B-Instruct-v0.2',
+            MAX_RETRIES: 3,
+            RATE_LIMIT_COOLDOWN: 60000,
+        },
+        APP: {
+            VERSION: '1.0.0',
+            CACHE_KEY: 'classificationCache',
+        }
+    };
+}
+
 class ExpenseLogger {
     constructor() {
         this.expenses = JSON.parse(localStorage.getItem('expenses')) || [];
