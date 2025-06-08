@@ -27,7 +27,10 @@ self.addEventListener('activate', event => {
                     }
                 })
             );
-        }).then(() => self.clients.claim()) // Take control of all clients
+        }).then(() => {
+            self.skipWaiting();
+            self.clients.claim();
+        }) // Take control of all clients
     );
 });
 
