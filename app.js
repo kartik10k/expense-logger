@@ -695,7 +695,7 @@ Respond with ONLY the category name (Food, Transport, Utilities, Housing, or Oth
 
         const totalDisplay = document.getElementById('monthTotal');
         if (totalDisplay) {
-            totalDisplay.textContent = `Total: $${monthTotal.toFixed(2)}`;
+            totalDisplay.textContent = `${monthTotal.toFixed(2)}`;
         }
     }
 }
