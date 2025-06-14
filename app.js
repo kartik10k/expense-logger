@@ -104,7 +104,8 @@ class ExpenseLogger {
         const recordButton = document.getElementById('recordButton');
         const exportButton = document.getElementById('exportSelected');
         const editForm = document.getElementById('editForm');
-        const selectAllCheckbox = document.getElementById('selectAll');
+        const selectAllMonthCheckbox = document.getElementById('selectAllMonth');
+        const selectAllYearCheckbox = document.getElementById('selectAllYear');
         const deleteSelectedButton = document.getElementById('deleteSelected');
         const addManualForm = document.getElementById('addManualForm');
         const prevMonthButton = document.getElementById('prevMonth');
@@ -114,7 +115,8 @@ class ExpenseLogger {
         recordButton.addEventListener('click', () => this.toggleRecording());
         exportButton.addEventListener('click', () => this.exportSelected());
         editForm.addEventListener('submit', (e) => this.handleEditSubmit(e));
-        selectAllCheckbox.addEventListener('change', () => this.toggleSelectAll());
+        selectAllMonthCheckbox.addEventListener('change', () => this.toggleSelectAllMonth());
+        selectAllYearCheckbox.addEventListener('change', () => this.toggleSelectAllYear());
         deleteSelectedButton.addEventListener('click', () => this.deleteSelected());
         addManualForm.addEventListener('submit', (e) => this.handleManualAdd(e));
         prevMonthButton.addEventListener('click', () => this.navigateMonth(-1));
@@ -329,7 +331,8 @@ Respond with ONLY the category name (Food, Transport, Utilities, Housing, or Oth
                 'food', 'restaurant', 'cafe', 'meal', 'grocery', 'vegetable', 'fruit',
                 'sabzi', 'store', 'market', 'dining', 'lunch', 'dinner', 'breakfast',
                 'snack', 'drink', 'beverage', 'cooking', 'ingredients', 'spice', 'masala',
-                'samosa', 'kachori', 'pav', 'bread', 'roti', 'chapati', 'naan'
+                'samosa', 'kachori', 'pav', 'bread', 'roti', 'chapati', 'naan',
+                'ice cream', 'dessert', 'sweet', 'candy', 'chocolate', 'bakery', 'cake', 'pastry'
             ]
         };
 
@@ -423,6 +426,8 @@ Respond with ONLY the category name (Food, Transport, Utilities, Housing, or Oth
         this.expenses.unshift(expense);
         this.saveExpenses();
         this.renderExpenses();
+        this.updateSelectAllMonth();
+        this.updateSelectAllYear();
     }
 
     saveExpenses() {
@@ -463,6 +468,8 @@ Respond with ONLY the category name (Food, Transport, Utilities, Housing, or Oth
             
             expensesList.appendChild(expenseElement);
         });
+        this.updateSelectAllMonth();
+        this.updateSelectAllYear();
     }
 
     editExpense(id) {
@@ -507,6 +514,8 @@ Respond with ONLY the category name (Food, Transport, Utilities, Housing, or Oth
         
         // Close the modal
         this.closeEditModal();
+        this.updateSelectAllMonth();
+        this.updateSelectAllYear();
     }
 
     deleteExpense(id) {
@@ -521,7 +530,8 @@ Respond with ONLY the category name (Food, Transport, Utilities, Housing, or Oth
             this.saveExpenses();
             this.renderExpenses();
             this.updateDeleteButton();
-            this.updateSelectAllCheckbox();
+            this.updateSelectAllMonth();
+            this.updateSelectAllYear();
         }
     }
 
@@ -540,22 +550,43 @@ Respond with ONLY the category name (Food, Transport, Utilities, Housing, or Oth
         });
     }
 
-    toggleSelectAll() {
-        const selectAllCheckbox = document.getElementById('selectAll');
+    toggleSelectAllMonth() {
+        const selectAllMonthCheckbox = document.getElementById('selectAllMonth');
         const monthExpenses = this.getCurrentMonthExpenses();
-        
-        // Clear previous selections
-        this.selectedExpenses.clear();
-        
-        if (selectAllCheckbox.checked) {
+
+        this.selectedExpenses.clear(); // Clear all selections first
+
+        if (selectAllMonthCheckbox && selectAllMonthCheckbox.checked) {
             // Add all current month expenses to selection
             monthExpenses.forEach(expense => {
                 this.selectedExpenses.add(expense.id);
             });
         }
-        
+
         this.renderExpenses();
         this.updateDeleteButton();
+        this.updateSelectAllYear(); // Also update year checkbox when month selection changes
+    }
+
+    toggleSelectAllYear() {
+        const selectAllYearCheckbox = document.getElementById('selectAllYear');
+        const yearExpenses = this.expenses.filter(expense => {
+            const expenseDate = new Date(expense.date);
+            return expenseDate.getFullYear() === this.currentDate.getFullYear();
+        });
+
+        this.selectedExpenses.clear(); // Clear all selections first
+
+        if (selectAllYearCheckbox && selectAllYearCheckbox.checked) {
+            // Add all expenses for the current year to selection
+            yearExpenses.forEach(expense => {
+                this.selectedExpenses.add(expense.id);
+            });
+        }
+
+        this.renderExpenses();
+        this.updateDeleteButton();
+        this.updateSelectAllMonth(); // Also update month checkbox when year selection changes
     }
 
     toggleExpenseSelection(expenseId) {
@@ -566,19 +597,8 @@ Respond with ONLY the category name (Food, Transport, Utilities, Housing, or Oth
         }
         
         this.updateDeleteButton();
-        this.updateSelectAllCheckbox();
-    }
-
-    updateSelectAllCheckbox() {
-        const selectAllCheckbox = document.getElementById('selectAll');
-        const monthExpenses = this.getCurrentMonthExpenses();
-        const monthExpenseIds = new Set(monthExpenses.map(expense => expense.id));
-        
-        // Check if all current month expenses are selected
-        const allSelected = monthExpenses.length > 0 && 
-            monthExpenses.every(expense => this.selectedExpenses.has(expense.id));
-        
-        selectAllCheckbox.checked = allSelected;
+        this.updateSelectAllMonth();
+        this.updateSelectAllYear();
     }
 
     updateDeleteButton() {
@@ -625,35 +645,6 @@ Respond with ONLY the category name (Food, Transport, Utilities, Housing, or Oth
         document.body.removeChild(link);
     }
 
-    deleteSelected() {
-        const monthExpenses = this.getCurrentMonthExpenses();
-        const selectedMonthExpenses = monthExpenses.filter(expense => 
-            this.selectedExpenses.has(expense.id)
-        );
-        
-        const count = selectedMonthExpenses.length;
-        if (count === 0) return;
-
-        const totalAmount = selectedMonthExpenses.reduce((sum, exp) => sum + exp.amount, 0);
-        
-        let message = `Are you sure you want to delete ${count} expense${count > 1 ? 's' : ''}?\n\n`;
-        message += `Total Amount: ${totalAmount} Rs\n`;
-        message += `Categories: ${[...new Set(selectedMonthExpenses.map(exp => exp.category))].join(', ')}\n\n`;
-        message += 'This action cannot be undone.';
-
-        if (confirm(message)) {
-            // Remove only the selected expenses from the current month
-            this.expenses = this.expenses.filter(expense => 
-                !this.selectedExpenses.has(expense.id)
-            );
-            this.selectedExpenses.clear();
-            this.saveExpenses();
-            this.renderExpenses();
-            this.updateDeleteButton();
-            this.updateSelectAllCheckbox();
-        }
-    }
-
     showAddManualForm() {
         document.getElementById('addManualModal').style.display = 'block';
     }
@@ -681,6 +672,8 @@ Respond with ONLY the category name (Food, Transport, Utilities, Housing, or Oth
         
         this.addExpense(expense);
         this.closeAddManualModal();
+        this.updateSelectAllMonth();
+        this.updateSelectAllYear();
     }
 
     navigateMonth(delta) {
@@ -689,7 +682,8 @@ Respond with ONLY the category name (Food, Transport, Utilities, Housing, or Oth
         this.updateMonthDisplay();
         this.renderExpenses();
         this.updateDeleteButton();
-        this.updateSelectAllCheckbox();
+        this.updateSelectAllMonth();
+        this.updateSelectAllYear();
     }
 
     updateMonthDisplay() {
@@ -740,6 +734,35 @@ Respond with ONLY the category name (Food, Transport, Utilities, Housing, or Oth
             const refreshButton = document.getElementById('refreshButton');
             refreshButton.style.opacity = '1';
             refreshButton.style.pointerEvents = 'auto';
+        }
+    }
+
+    updateSelectAllMonth() {
+        const selectAllMonthCheckbox = document.getElementById('selectAllMonth');
+        const monthExpenses = this.getCurrentMonthExpenses();
+        
+        // Check if all current month expenses are selected
+        const allSelected = monthExpenses.length > 0 && 
+            monthExpenses.every(expense => this.selectedExpenses.has(expense.id));
+        
+        if(selectAllMonthCheckbox) { // Check if element exists before setting property
+            selectAllMonthCheckbox.checked = allSelected;
+        }
+    }
+
+    updateSelectAllYear() {
+        const selectAllYearCheckbox = document.getElementById('selectAllYear');
+        const yearExpenses = this.expenses.filter(expense => {
+            const expenseDate = new Date(expense.date);
+            return expenseDate.getFullYear() === this.currentDate.getFullYear();
+        });
+
+        // Check if all current year expenses are selected
+        const allSelectedYear = yearExpenses.length > 0 &&
+                                 yearExpenses.every(expense => this.selectedExpenses.has(expense.id));
+        
+        if(selectAllYearCheckbox) { // Check if element exists before setting property
+            selectAllYearCheckbox.checked = allSelectedYear;
         }
     }
 }

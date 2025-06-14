@@ -53,12 +53,20 @@
                         Total: <span id="monthTotal">0</span> Rs
                     </div>
                     <div class="expenses-actions">
-                        <label class="select-all">
-                            <input type="checkbox" id="selectAll">
-                            Select All
-                        </label>
-                        <button id="exportSelected" class="export-button" disabled>📥 Export Selected</button>
-                        <button id="deleteSelected" class="delete-selected-button" disabled>🗑️ Delete Selected</button>
+                        <div class="selection-controls">
+                            <div class="select-all-checkbox">
+                                <input type="checkbox" id="selectAllMonth">
+                                <label for="selectAllMonth">Select Current Month</label>
+                            </div>
+                            <div class="select-all-checkbox">
+                                <input type="checkbox" id="selectAllYear">
+                                <label for="selectAllYear">Select All Year</label>
+                            </div>
+                        </div>
+                        <div class="action-buttons">
+                            <button id="exportSelected" class="export-button" disabled>📥 Export Selected</button>
+                            <button id="deleteSelected" class="delete-selected-button" disabled>🗑️ Delete Selected</button>
+                        </div>
                     </div>
                 </div>
                 <div id="expensesList" class="expenses-list"></div>
