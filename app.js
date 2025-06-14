@@ -110,7 +110,6 @@ class ExpenseLogger {
         const addManualForm = document.getElementById('addManualForm');
         const prevMonthButton = document.getElementById('prevMonth');
         const nextMonthButton = document.getElementById('nextMonth');
-        const refreshButton = document.getElementById('refreshButton');
 
         recordButton.addEventListener('click', () => this.toggleRecording());
         exportButton.addEventListener('click', () => this.exportSelected());
@@ -121,7 +120,6 @@ class ExpenseLogger {
         addManualForm.addEventListener('submit', (e) => this.handleManualAdd(e));
         prevMonthButton.addEventListener('click', () => this.navigateMonth(-1));
         nextMonthButton.addEventListener('click', () => this.navigateMonth(1));
-        refreshButton.addEventListener('click', () => this.checkForUpdates());
     }
 
     toggleRecording() {
@@ -711,32 +709,6 @@ Respond with ONLY the category name (Food, Transport, Utilities, Housing, or Oth
         }
     }
 
-    async checkForUpdates() {
-        try {
-            // Show loading state
-            const refreshButton = document.getElementById('refreshButton');
-            refreshButton.style.opacity = '0.5';
-            refreshButton.style.pointerEvents = 'none';
-
-            // Check for updates
-            const registration = await navigator.serviceWorker.getRegistration();
-            if (registration) {
-                // Initiate the service worker update, but don't await it to ensure quick UI refresh
-                registration.update();
-            }
-
-            // Reload the page immediately to show the latest version (or attempt to get it)
-            window.location.reload();
-        } catch (error) {
-            console.error('Error checking for updates:', error);
-            alert('Error checking for updates. Please try again.');
-            // Reset button state on error
-            const refreshButton = document.getElementById('refreshButton');
-            refreshButton.style.opacity = '1';
-            refreshButton.style.pointerEvents = 'auto';
-        }
-    }
-
     updateSelectAllMonth() {
         const selectAllMonthCheckbox = document.getElementById('selectAllMonth');
         const monthExpenses = this.getCurrentMonthExpenses();
@@ -792,12 +764,4 @@ if ('serviceWorker' in navigator) {
                 console.log('ServiceWorker registration failed: ', err);
             });
     });
-}
-
-// Listen for update notifications from service worker (for automatic updates on activation)
-navigator.serviceWorker.addEventListener('message', (event) => {
-    if (event.data === 'UPDATE_AVAILABLE') {
-        // Reload the page to get the new version
-        window.location.reload();
-    }
-}); 
+} 
