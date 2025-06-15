@@ -745,9 +745,13 @@ document.addEventListener('DOMContentLoaded', () => {
     expenseLogger = new ExpenseLogger();
 
     // Check if the app is running in standalone mode (installed PWA)
-    if (navigator.serviceWorker && navigator.serviceWorker.controller && window.matchMedia('(display-mode: standalone)').matches) {
-        navigator.serviceWorker.controller.postMessage('CHECK_FOR_UPDATE');
-        console.log('Sent CHECK_FOR_UPDATE message to service worker.');
+    if (navigator.serviceWorker) {
+        navigator.serviceWorker.ready.then(registration => {
+            if (window.matchMedia('(display-mode: standalone)').matches) {
+                console.log('App is in standalone mode. Checking for service worker update.');
+                registration.update(); // Explicitly check for updates
+            }
+        });
     }
 });
 
