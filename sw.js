@@ -1,4 +1,4 @@
-const CACHE_NAME = 'expense-logger-cache';
+const CACHE_NAME = 'expense-logger-cache-v2';
 const ASSETS_TO_CACHE = [
     '/',
     '/index.html',
@@ -34,14 +34,37 @@ self.addEventListener('activate', event => {
     );
 });
 
-// Fetch event - serve from cache, then network, and update cache
+// Fetch event - network-first for HTML/JS, cache-first for others
 self.addEventListener('fetch', event => {
-    event.respondWith(
-        caches.match(event.request)
-            .then(cachedResponse => {
-                const fetchPromise = fetch(event.request)
-                    .then(networkResponse => {
-                        // Check if we received a valid response
+    const requestUrl = new URL(event.request.url);
+
+    // For HTML documents and JavaScript files, try network first
+    if (requestUrl.pathname === '/' || requestUrl.pathname.endsWith('.html') || requestUrl.pathname.endsWith('.js')) {
+        event.respondWith(
+            fetch(event.request)
+                .then(networkResponse => {
+                    // Cache the new response
+                    if (networkResponse && networkResponse.status === 200 && networkResponse.type === 'basic') {
+                        const clonedResponse = networkResponse.clone();
+                        caches.open(CACHE_NAME).then(cache => {
+                            cache.put(event.request, clonedResponse);
+                        });
+                    }
+                    return networkResponse;
+                })
+                .catch(() => {
+                    // If network fails, try to serve from cache
+                    return caches.match(event.request);
+                })
+        );
+    } else {
+        // For other assets (CSS, images, etc.), try cache first
+        event.respondWith(
+            caches.match(event.request)
+                .then(cachedResponse => {
+                    // Return cached response if available, otherwise fetch from network
+                    return cachedResponse || fetch(event.request).then(networkResponse => {
+                        // Cache the new response
                         if (networkResponse && networkResponse.status === 200 && networkResponse.type === 'basic') {
                             const clonedResponse = networkResponse.clone();
                             caches.open(CACHE_NAME).then(cache => {
@@ -49,16 +72,13 @@ self.addEventListener('fetch', event => {
                             });
                         }
                         return networkResponse;
-                    }).catch(error => {
-                        console.error('Fetch failed:', error);
-                        // If both cache and network fail, you might want to return an offline page
+                    }).catch(() => {
+                        // If both cache and network fail, you might want to return a fallback
                         return new Response('<h1>Offline</h1>', { headers: { 'Content-Type': 'text/html' } });
                     });
-
-                // Return cached response immediately if available, otherwise wait for network
-                return cachedResponse || fetchPromise;
-            })
-    );
+                })
+        );
+    }
 });
 
 // Listen for messages from the main thread

@@ -753,18 +753,48 @@ function closeEditModal() {
 // Register service worker
 if ('serviceWorker' in navigator) {
     window.addEventListener('load', () => {
-        navigator.serviceWorker.register('sw.js')
+        navigator.serviceWorker.register(`sw.js?v=${Date.now()}`)
             .then(reg => {
                 console.log('ServiceWorker registration successful with scope: ', reg.scope);
 
+                // Immediately check for a service worker update upon load
+                // This helps ensure the latest version is always checked on app startup
+                if (reg.update) {
+                    reg.update().then(() => {
+                        console.log('Explicitly checked for service worker update on load.');
+                    }).catch(error => {
+                        console.error('Service worker explicit update check failed:', error);
+                    });
+                }
+
+                // This part is crucial for immediate updates on app launch
                 reg.addEventListener('updatefound', () => {
                     const newWorker = reg.installing;
-                    newWorker.addEventListener('statechange', () => {
-                        if (newWorker.state === 'activated') {
-                            // A new service worker has activated, reload the page to apply updates
-                            window.location.reload();
-                        }
-                    });
+                    if (newWorker) {
+                        newWorker.addEventListener('statechange', () => {
+                            if (newWorker.state === 'installed') {
+                                // A new service worker is installed
+                                // If there's an existing controller, prompt the new one to take over
+                                if (navigator.serviceWorker.controller) {
+                                    console.log('New service worker installed, notifying to skip waiting and reloading.');
+                                    newWorker.postMessage({ type: 'SKIP_WAITING' });
+                                    // Trigger a reload directly after sending skip waiting,
+                                    // as controllerchange might not always fire immediately on iOS PWA launch.
+                                    window.location.reload();
+                                } else {
+                                    // No existing controller, the new one will activate directly
+                                    console.log('No existing service worker controller, new one will activate directly.');
+                                }
+                            }
+                        });
+                    }
+                });
+
+                // Listen for the controllerchange event to reload the page when a new SW takes control
+                // This is a fallback/additional safety net
+                navigator.serviceWorker.addEventListener('controllerchange', () => {
+                    console.log('New service worker activated, reloading page due to controllerchange.');
+                    window.location.reload();
                 });
             })
             .catch(err => {
