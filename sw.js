@@ -34,20 +34,29 @@ self.addEventListener('activate', event => {
     );
 });
 
-// Fetch event - serve from cache, fall back to network
+// Fetch event - serve from cache, then network, and update cache
 self.addEventListener('fetch', event => {
     event.respondWith(
-        fetch(event.request)
-            .then(response => {
-                // Cache the new response
-                caches.open(CACHE_NAME).then(cache => {
-                    cache.put(event.request, response.clone());
-                });
-                return response;
-            })
-            .catch(() => {
-                // If network fails, try to serve from cache
-                return caches.match(event.request);
+        caches.match(event.request)
+            .then(cachedResponse => {
+                const fetchPromise = fetch(event.request)
+                    .then(networkResponse => {
+                        // Check if we received a valid response
+                        if (networkResponse && networkResponse.status === 200 && networkResponse.type === 'basic') {
+                            const clonedResponse = networkResponse.clone();
+                            caches.open(CACHE_NAME).then(cache => {
+                                cache.put(event.request, clonedResponse);
+                            });
+                        }
+                        return networkResponse;
+                    }).catch(error => {
+                        console.error('Fetch failed:', error);
+                        // If both cache and network fail, you might want to return an offline page
+                        return new Response('<h1>Offline</h1>', { headers: { 'Content-Type': 'text/html' } });
+                    });
+
+                // Return cached response immediately if available, otherwise wait for network
+                return cachedResponse || fetchPromise;
             })
     );
 });
@@ -67,5 +76,8 @@ self.addEventListener('message', event => {
                     });
                 }
             });
+    }
+    if (event.data && event.data.type === 'SKIP_WAITING') {
+        self.skipWaiting();
     }
 }); 

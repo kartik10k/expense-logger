@@ -753,20 +753,22 @@ function closeEditModal() {
 // Register service worker
 if ('serviceWorker' in navigator) {
     window.addEventListener('load', () => {
-        // Unregister all existing service workers first to force a fresh install
-        navigator.serviceWorker.getRegistrations().then(registrations => {
-            for (let registration of registrations) {
-                registration.unregister();
-            }
-        }).then(() => {
-            // Now register the new service worker
-            navigator.serviceWorker.register('sw.js')
-                .then(registration => {
-                    console.log('ServiceWorker registration successful');
-                })
-                .catch(err => {
-                    console.log('ServiceWorker registration failed: ', err);
+        navigator.serviceWorker.register('sw.js')
+            .then(reg => {
+                console.log('ServiceWorker registration successful with scope: ', reg.scope);
+
+                reg.addEventListener('updatefound', () => {
+                    const newWorker = reg.installing;
+                    newWorker.addEventListener('statechange', () => {
+                        if (newWorker.state === 'activated') {
+                            // A new service worker has activated, reload the page to apply updates
+                            window.location.reload();
+                        }
+                    });
                 });
-        });
+            })
+            .catch(err => {
+                console.log('ServiceWorker registration failed: ', err);
+            });
     });
 } 
