@@ -1,4 +1,4 @@
-const CACHE_NAME = 'expense-logger-cache-v2';
+const CACHE_NAME = 'expense-logger-cache-v3';
 const ASSETS_TO_CACHE = [
     '/',
     '/index.html',
@@ -97,5 +97,23 @@ self.addEventListener('message', event => {
     }
     if (event.data && event.data.type === 'SKIP_WAITING') {
         self.skipWaiting();
+    }
+    if (event.data === 'CHECK_FOR_UPDATE') {
+        // Force check for updates by requesting the root with no-cache
+        fetch('/', { cache: 'no-store' })
+            .then(response => {
+                if (response.status === 200) {
+                    // If the fetch is successful, it means we got the latest version.
+                    // Compare with cached version or simply signal reload to activate new SW.
+                    // For simplicity, we can just signal the client to reload to pick up new SW.
+                    self.clients.matchAll().then(clients => {
+                        clients.forEach(client => {
+                            client.postMessage('RELOAD_APP');
+                        });
+                    });
+                }
+            }).catch(error => {
+                console.error('Failed to fetch for update:', error);
+            });
     }
 }); 

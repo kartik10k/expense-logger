@@ -743,6 +743,12 @@ Respond with ONLY the category name (Food, Transport, Utilities, Housing, or Oth
 let expenseLogger;
 document.addEventListener('DOMContentLoaded', () => {
     expenseLogger = new ExpenseLogger();
+
+    // Check if the app is running in standalone mode (installed PWA)
+    if (navigator.serviceWorker && navigator.serviceWorker.controller && window.matchMedia('(display-mode: standalone)').matches) {
+        navigator.serviceWorker.controller.postMessage('CHECK_FOR_UPDATE');
+        console.log('Sent CHECK_FOR_UPDATE message to service worker.');
+    }
 });
 
 // Make closeEditModal available globally
@@ -770,6 +776,14 @@ if ('serviceWorker' in navigator) {
                                 }
                             }
                         });
+                    }
+                });
+
+                // Listen for messages from the service worker (e.g., for forced updates)
+                navigator.serviceWorker.addEventListener('message', event => {
+                    if (event.data === 'RELOAD_APP') {
+                        console.log('Service worker signaled app reload.');
+                        window.location.reload();
                     }
                 });
 
