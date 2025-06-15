@@ -753,15 +753,20 @@ function closeEditModal() {
 // Register service worker
 if ('serviceWorker' in navigator) {
     window.addEventListener('load', () => {
-        navigator.serviceWorker.register('sw.js')
-            .then(registration => {
-                console.log('ServiceWorker registration successful');
-                
-                // Optional: Check for updates when app starts, which triggers automatic reload via message listener
-                // registration.active.postMessage('CHECK_UPDATE');
-            })
-            .catch(err => {
-                console.log('ServiceWorker registration failed: ', err);
-            });
+        // Unregister all existing service workers first to force a fresh install
+        navigator.serviceWorker.getRegistrations().then(registrations => {
+            for (let registration of registrations) {
+                registration.unregister();
+            }
+        }).then(() => {
+            // Now register the new service worker
+            navigator.serviceWorker.register('sw.js')
+                .then(registration => {
+                    console.log('ServiceWorker registration successful');
+                })
+                .catch(err => {
+                    console.log('ServiceWorker registration failed: ', err);
+                });
+        });
     });
 } 
