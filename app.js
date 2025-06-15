@@ -763,7 +763,8 @@ function closeEditModal() {
 // Register service worker
 if ('serviceWorker' in navigator) {
     window.addEventListener('load', () => {
-        navigator.serviceWorker.register(`sw.js`)
+        const appVersion = window.appConfig.APP.VERSION; // Get app version
+        navigator.serviceWorker.register(`sw.js?v=${appVersion}`, { updateViaCache: 'none' })
             .then(reg => {
                 console.log('ServiceWorker registration successful with scope: ', reg.scope);
 
