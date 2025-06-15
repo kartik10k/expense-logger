@@ -8,7 +8,7 @@ if (typeof window.appConfig === 'undefined') {
             RATE_LIMIT_COOLDOWN: 60000,
         },
         APP: {
-            VERSION: '1.0.0',
+            VERSION: '1.0.1',
             CACHE_KEY: 'classificationCache',
         }
     };
